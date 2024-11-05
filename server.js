@@ -1,6 +1,7 @@
 const express = require('express');
 const WebSocket = require('ws');
 const http = require('http');
+const { getAllMessages, addMessage } = require('./model/messages');
 
 const app = express();
 
@@ -11,19 +12,9 @@ app.use(express.urlencoded());
 /** Allow client to reach /public folder */
 app.use(express.static('public'));
 
-/** A simulation of our database */
-let messages = [];
-
-/** Send message request */
-app.post('/api/messages', async (req, res) => {
-	const { content, sender } = req.body;
-	messages.push({ content, sender });
-	res.json(messages);
-});
-
 /** Get all messages */
-app.get('/api/messages', (req, res) => {
-	res.json({ messages });
+app.get('/api/messages', (_, res) => {
+	res.json({ messages: getAllMessages() });
 });
 
 const server = http.createServer(app);
@@ -32,11 +23,9 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 wss.on('connection', (ws) => {
-	console.log('New client connected');
-
 	ws.on('message', (message) => {
 		const parsedMessage = JSON.parse(message);
-		messages.push(parsedMessage);
+		addMessage(parsedMessage);
 		wss.clients.forEach((client) => {
 			if (client.readyState === WebSocket.OPEN) {
 				client.send(JSON.stringify(parsedMessage));
