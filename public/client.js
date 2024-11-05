@@ -3,10 +3,15 @@ const form = document.querySelector('#form');
 const contentInput = document.querySelector('#content');
 const senderInput = document.querySelector('#sender');
 
-let messages = [];
+/** Setting up web sockets */
+const socket = new WebSocket('ws://127.0.0.1:3000');
+
+socket.addEventListener('open', () => {
+	console.log('Connected to WebSocket server');
+});
 
 /** Creates a message element and adds it to the DOM */
-const createNewMessage = (content, sender) => {
+const createNewMessage = ({ content, sender, id }) => {
 	const messageElement = document.createElement('div');
 	messageElement.classList.add('message');
 
@@ -18,36 +23,61 @@ const createNewMessage = (content, sender) => {
 	senderElement.classList.add('message-sender');
 	senderElement.innerText = sender;
 
+	const removeButton = document.createElement('button');
+	removeButton.classList.add('remove-button');
+	removeButton.innerText = 'Remove';
+
+	removeButton.addEventListener('click', () => {
+		try {
+			socket.send(
+				JSON.stringify({
+					type: 'remove',
+					id,
+				}),
+			);
+		} catch (err) {
+			console.log(err);
+		}
+	});
+
 	messageElement.appendChild(contentElement);
 	messageElement.appendChild(senderElement);
+	messageElement.appendChild(removeButton);
 
 	messagesWrapperElement.appendChild(messageElement);
+};
+
+let messages = [];
+const rerenderMessages = () => {
+	messagesWrapperElement.innerHTML = '';
+	messages.forEach((message) => {
+		createNewMessage(message);
+	});
 };
 
 /** Loads initial messages */
 fetch('/api/messages')
 	.then((res) => res.json())
-	.then(({ messages }) => {
-		messages.forEach((message) => {
-			createNewMessage(message.content, message.sender);
-		});
+	.then(({ messages: newMessages }) => {
+		messages = newMessages;
+		rerenderMessages();
 	});
-
-/** Setting up web sockets */
-const socket = new WebSocket('ws://127.0.0.1:3000');
-
-socket.addEventListener('open', () => {
-	console.log('Connected to WebSocket server');
-});
 
 /** Receive messages from the server */
 socket.addEventListener('message', async (event) => {
-	try {
-		const message = JSON.parse(event.data);
-		createNewMessage(message.content, message.sender);
-	} catch (error) {
-		console.error('Error parsing message:', error);
+	const data = JSON.parse(event.data);
+
+	if (data.type === 'remove') {
+		messages = messages.filter((message) => message.id !== data.id);
+		rerenderMessages();
+	} else if (data.type === 'add') {
+		messages.push(data.message);
+		rerenderMessages();
 	}
+});
+
+socket.addEventListener('close', () => {
+	console.log('Socket closed');
 });
 
 /** Sending message */
@@ -57,7 +87,9 @@ form.addEventListener('submit', (e) => {
 	const sender = senderInput.value;
 
 	/** Send web socket message to the server */
-	socket.send(JSON.stringify({ content, sender }));
+	socket.send(
+		JSON.stringify({ type: 'add', message: { content, sender, id: Math.random().toString() } }),
+	);
 
 	/** Clear form state */
 	contentInput.value = '';

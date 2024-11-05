@@ -1,30 +1,19 @@
-const fs = require('fs');
-const path = require('path');
+let messages = [];
 
 const getAllMessages = () => {
-	try {
-		const messagesFile = fs.readFileSync(
-			path.join(__dirname, '../database/messages.json'),
-			'utf-8',
-		);
-		messages = JSON.parse(messagesFile);
-		return messages;
-	} catch (error) {
-		console.error('Error while reading messages data', error);
-	}
+	return messages;
 };
 
 const addMessage = (message) => {
-	const messagesFile = fs.readFileSync(
-		path.join(__dirname, '../database/messages.json'),
-		'utf-8',
-	);
-	messages = JSON.parse(messagesFile);
 	messages.push(message);
-	fs.writeFileSync(path.join(__dirname, '../database/messages.json'), JSON.stringify(messages));
+};
+
+const removeMessage = (id) => {
+	messages = messages.filter((message) => message.id !== id);
 };
 
 module.exports = {
 	getAllMessages,
 	addMessage,
+	removeMessage,
 };

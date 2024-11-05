@@ -1,7 +1,7 @@
 const express = require('express');
 const WebSocket = require('ws');
 const http = require('http');
-const { getAllMessages, addMessage } = require('./model/messages');
+const { getAllMessages, addMessage, removeMessage } = require('./model/messages');
 
 const app = express();
 
@@ -23,14 +23,28 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 wss.on('connection', (ws) => {
-	ws.on('message', (message) => {
-		const parsedMessage = JSON.parse(message);
-		addMessage(parsedMessage);
+	ws.on('message', (payload) => {
+		const data = JSON.parse(payload);
+
+		if (data.type === 'remove') {
+			removeMessage(data.id);
+		} else if (data.type === 'add') {
+			addMessage(data.message);
+		}
+
 		wss.clients.forEach((client) => {
 			if (client.readyState === WebSocket.OPEN) {
-				client.send(JSON.stringify(parsedMessage));
+				client.send(JSON.stringify(data));
 			}
 		});
+	});
+
+	ws.on('close', () => {
+		console.log('WebSocket connection closed');
+	});
+
+	ws.on('error', (error) => {
+		console.error('WebSocket error:', error);
 	});
 });
 
