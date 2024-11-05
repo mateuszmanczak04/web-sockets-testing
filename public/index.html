@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+		<script src="client.js" defer></script>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<div id="app">
+			<h1>Hello client!</h1>
+			<div id="messages"></div>
+			<form action="/api/messages" method="post" id="form">
+				<input required type="text" placeholder="Content" name="content" id="content" />
+				<input required type="text" placeholder="Sender" name="sender" id="sender" />
+				<button type="submit">Send</button>
+			</form>
+		</div>
+	</body>
+</html>
