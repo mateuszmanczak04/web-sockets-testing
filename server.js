@@ -1,12 +1,9 @@
 const express = require('express');
-const path = require('path');
-const net = require('net');
-
-const createSocket = (socket) => {
-	const s = socket || new net.Socket();
-};
+const WebSocket = require('ws');
+const http = require('http');
 
 const app = express();
+
 /** Allow server to receive form data and json */
 app.use(express.json());
 app.use(express.urlencoded());
@@ -15,20 +12,7 @@ app.use(express.urlencoded());
 app.use(express.static('public'));
 
 /** A simulation of our database */
-let messages = [
-	{
-		content: 'ABC',
-		sender: 'Mateusz',
-	},
-	{
-		content: 'ABC',
-		sender: 'Mateusz',
-	},
-	{
-		content: 'ABC',
-		sender: 'Mateusz',
-	},
-];
+let messages = [];
 
 /** Send message request */
 app.post('/api/messages', async (req, res) => {
@@ -42,7 +26,26 @@ app.get('/api/messages', (req, res) => {
 	res.json({ messages });
 });
 
-/** Start the server */
-app.listen(3000, '127.0.0.1', () => {
-	console.log('listening');
+const server = http.createServer(app);
+
+/** Setup web sockets */
+const wss = new WebSocket.Server({ server });
+
+wss.on('connection', (ws) => {
+	console.log('New client connected');
+
+	ws.on('message', (message) => {
+		const parsedMessage = JSON.parse(message);
+		messages.push(parsedMessage);
+		wss.clients.forEach((client) => {
+			if (client.readyState === WebSocket.OPEN) {
+				client.send(JSON.stringify(parsedMessage));
+			}
+		});
+	});
+});
+
+/** Spin up the server */
+server.listen(3000, '127.0.0.1', () => {
+	console.log('Listening on http://127.0.0.1:3000');
 });
