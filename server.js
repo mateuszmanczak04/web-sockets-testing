@@ -49,6 +49,6 @@ wss.on('connection', (ws) => {
 });
 
 /** Spin up the server */
-server.listen(3000, '127.0.0.1', () => {
-	console.log('Listening on http://127.0.0.1:3000');
+server.listen(3000, process.env.IP_ADDRESS, () => {
+	console.log('Listening on', process.env.IP_ADDRESS);
 });

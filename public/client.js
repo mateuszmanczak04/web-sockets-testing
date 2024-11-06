@@ -4,7 +4,7 @@ const contentInput = document.querySelector('#content');
 const senderInput = document.querySelector('#sender');
 
 /** Setting up web sockets */
-const socket = new WebSocket('ws://127.0.0.1:3000');
+const socket = new WebSocket('ws://' + window.location.host);
 
 socket.addEventListener('open', () => {
 	console.log('Connected to WebSocket server');
