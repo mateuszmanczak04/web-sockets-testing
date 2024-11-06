@@ -2,6 +2,7 @@ const messagesWrapperElement = document.querySelector('#messages');
 const form = document.querySelector('#form');
 const contentInput = document.querySelector('#content');
 const senderInput = document.querySelector('#sender');
+const fileInput = document.querySelector('#file');
 
 /** Setting up web sockets */
 const socket = new WebSocket('ws://' + window.location.host);
@@ -11,7 +12,7 @@ socket.addEventListener('open', () => {
 });
 
 /** Creates a message element and adds it to the DOM */
-const createNewMessage = ({ content, sender, id }) => {
+const createNewMessage = ({ content, sender, id, imageUrl }) => {
 	const messageElement = document.createElement('div');
 	messageElement.classList.add('message');
 
@@ -28,20 +29,22 @@ const createNewMessage = ({ content, sender, id }) => {
 	removeButton.innerText = 'Remove';
 
 	removeButton.addEventListener('click', () => {
-		try {
-			socket.send(
-				JSON.stringify({
-					type: 'remove',
-					id,
-				}),
-			);
-		} catch (err) {
-			console.log(err);
-		}
+		socket.send(
+			JSON.stringify({
+				type: 'remove',
+				id,
+			}),
+		);
 	});
 
 	messageElement.appendChild(contentElement);
 	messageElement.appendChild(senderElement);
+	if (imageUrl) {
+		const imageElement = document.createElement('img');
+		imageElement.src = imageUrl;
+		imageElement.alt = content;
+		messageElement.appendChild(imageElement);
+	}
 	messageElement.appendChild(removeButton);
 
 	messagesWrapperElement.appendChild(messageElement);
@@ -83,17 +86,61 @@ socket.addEventListener('close', () => {
 /** Sending message */
 form.addEventListener('submit', (e) => {
 	e.preventDefault();
+	const loadingElement = document.querySelector('#loading');
+	loadingElement.classList.remove('hidden');
+
 	const content = contentInput.value;
 	const sender = senderInput.value;
+	const file = fileInput.files[0];
 
-	/** Send web socket message to the server */
-	socket.send(
-		JSON.stringify({ type: 'add', message: { content, sender, id: Math.random().toString() } }),
-	);
+	if (file) {
+		const reader = new FileReader();
 
-	/** Clear form state */
-	contentInput.value = '';
-	contentInput.focus();
+		reader.onload = (event) => {
+			const base64String = event.target.result;
 
-	senderInput.disabled = true;
+			/** Send web socket message to the server */
+			socket.send(
+				JSON.stringify({
+					type: 'add',
+					message: {
+						content,
+						sender,
+						id: Math.random().toString(),
+						image: {
+							name: file.name,
+							data: base64String.split(',')[1], // Remove "data:image/jpeg;base64,"
+						},
+					},
+				}),
+			);
+
+			/** Clear form state */
+			contentInput.value = '';
+			contentInput.focus();
+			senderInput.disabled = true;
+			loadingElement.classList.add('hidden');
+		};
+
+		// Trigger file reading
+		reader.readAsDataURL(file);
+	} else {
+		/** Send web socket message to the server */
+		socket.send(
+			JSON.stringify({
+				type: 'add',
+				message: {
+					content,
+					sender,
+					id: Math.random().toString(),
+				},
+			}),
+		);
+
+		/** Clear form state */
+		contentInput.value = '';
+		contentInput.focus();
+		senderInput.disabled = true;
+		loadingElement.classList.add('hidden');
+	}
 });

@@ -12,9 +12,11 @@
 			<h1>Hello client!</h1>
 			<div id="messages"></div>
 			<form action="/api/messages" method="post" id="form">
-				<input required type="text" placeholder="Content" name="content" id="content" />
+				<input type="text" placeholder="Content" name="content" id="content" />
 				<input required type="text" placeholder="Sender" name="sender" id="sender" />
+				<input type="file" name="file" id="file" accept="image/jpg,image/jpg" />
 				<button type="submit">Send</button>
+				<small id="loading" class="hidden">Loading...</small>
 			</form>
 		</div>
 	</body>
