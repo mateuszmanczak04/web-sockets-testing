@@ -95,6 +95,5 @@ form.addEventListener('submit', (e) => {
 	contentInput.value = '';
 	contentInput.focus();
 
-	senderInput.value += ' (You cannot change it)';
 	senderInput.disabled = true;
 });
