@@ -43,6 +43,7 @@ const createNewMessage = ({ content, sender, id, imageUrl }) => {
 		const imageElement = document.createElement('img');
 		imageElement.src = imageUrl;
 		imageElement.alt = content;
+		imageElement.classList.add('message-image');
 		messageElement.appendChild(imageElement);
 	}
 	messageElement.appendChild(removeButton);
